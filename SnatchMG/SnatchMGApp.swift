@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct MobileGestaltApp: App {
+struct SnatchMGApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

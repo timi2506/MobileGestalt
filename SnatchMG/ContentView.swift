@@ -67,6 +67,15 @@ struct ContentView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
+                            Section {
+                                HStack {
+                                    TextField("For Example: 64GB, PRODUCT RED", text: $server.additionalInformation.emptyNil)
+                                        .keyboardType(.numberPad)
+                                }
+                            } header: {
+                                Text("Additional Information")
+                            }
+                            
                         }
                         .formStyle(.grouped)
                         .navigationTitle("Server Configuration")
@@ -195,6 +204,20 @@ struct ContentView: View {
             let msg = Message(category: .error, length: 100000, summary: "An Error occured", description: AttributedString(error.localizedDescription))
             messages.insert(TextLocated(location: .init(oneBasedLine: 0, column: 0), entity: msg))
             errorText = Text(error.localizedDescription)
+        }
+    }
+}
+
+extension Binding where Value == String? {
+    var emptyNil: Binding<String> {
+        Binding<String>(get: {
+            self.wrappedValue ?? ""
+        }) { new in
+            if new.isEmpty == true {
+                self.wrappedValue = nil
+            } else {
+                self.wrappedValue = new
+            }
         }
     }
 }
