@@ -1,16 +1,16 @@
 import Vapor
 import Network
-import Foundation
+import SwiftUI
 import Combine
 import DeviceKit
 import UIKit
 
-final class MobileGestaltServer: ObservableObject {
+final class MobileGestaltServer: NSObject, ObservableObject, NetServiceDelegate {
     static let shared = MobileGestaltServer(port: 7771)
     
     @Published var port: Int
     private var app: Application?
-    @Published var isAdvertising = false
+    @AppStorage("isAdvertising") var isAdvertising = false
     @Published var displayName: String {
         didSet {
             UserDefaults.standard.set(displayName, forKey: "savedDisplayName")
@@ -21,6 +21,7 @@ final class MobileGestaltServer: ObservableObject {
     private init(port: Int) {
         self.port = port
         self.displayName = UserDefaults.standard.string(forKey: "savedDisplayName") ?? Device.current.localizedModel ?? Device.current.name ?? Device.current.systemName ?? "Device"
+        UserDefaults.standard.set(false, forKey: "isAdvertising")
     }
     
     func start() async throws {
@@ -55,14 +56,23 @@ final class MobileGestaltServer: ObservableObject {
             advertiseBonjour(port: 7771)
         }
         Task.detached {
-            try await app.execute()
+            do {
+                try await app.execute()
+            } catch {
+                DispatchQueue.main.async {
+                    UserDefaults.standard.set(false, forKey: "isAdvertising")
+                    self.isAdvertising = false
+                }
+            }
         }
     }
     
     func stop() async {
         guard let app = app else { return }
         service?.stop()
+        service?.delegate = self
         service = nil
+        UserDefaults.standard.set(false, forKey: "isAdvertising")
         isAdvertising = false
         
         try? await app.asyncShutdown()
@@ -76,10 +86,21 @@ final class MobileGestaltServer: ObservableObject {
         let realName = displayName.isEmpty ? "Device" : displayName
         service = NetService(domain: "local.", type: "_MobileGestaltServer._tcp.", name: realName, port: port)
         service?.publish()
+        UserDefaults.standard.set(false, forKey: "isAdvertising")
         isAdvertising = true
     }
     func netService(_ sender: NetService, didNotPublish errorDict: [String : NSNumber]) {
         print("Bonjour failed:", errorDict)
+        DispatchQueue.main.async {
+            UserDefaults.standard.set(false, forKey: "isAdvertising")
+            self.isAdvertising = false
+        }
+    }
+    func netServiceDidStop(_ sender: NetService) {
+        DispatchQueue.main.async {
+            UserDefaults.standard.set(false, forKey: "isAdvertising")
+            self.isAdvertising = false
+        }
     }
 }
 
@@ -126,10 +147,13 @@ extension DeviceInformation {
     }
     
     static func getDeviceIdentifier() -> String {
-        var size = 0
-        sysctlbyname("hw.machine", nil, &size, nil, 0)
-        var str = [CChar](repeating: 0, count: size)
-        sysctlbyname("hw.machine", &str, &size, nil, 0)
-        return String(cString: str)
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        return identifier
     }
 }

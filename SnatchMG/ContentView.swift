@@ -30,6 +30,8 @@ struct ContentView: View {
                                     Spacer()
                                     Button(action: {
                                         server.displayName = Device.current.localizedModel ?? Device.current.name ?? Device.current.systemName ?? "Device"
+                                        UserDefaults.standard.removeObject(forKey: "savedDisplayName")
+                                        try? MobileGestaltManager.shared.fetchMobilegestalt()
                                     }) {
                                         Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
                                     }
@@ -74,7 +76,6 @@ struct ContentView: View {
                             } header: {
                                 Text("Additional Information")
                             }
-                            
                         }
                         .formStyle(.grouped)
                         .navigationTitle("Server Configuration")
@@ -135,7 +136,13 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
                 .padding()
+                NavigationLink("DEBUG") {
+                    DEBUGView()
+                }
                 if let content = mobileGestaltManager.plistContent {
+                    if let model = try? MGModel(from: .shared) {
+                        Text(String(describing: model))
+                    }
                     CodeEditor(text: .constant(content.content), position: $position, messages: $messages, language: .swift())
                         .environment(\.codeEditorTheme, colorScheme == .dark ? Theme.defaultDark : Theme.defaultLight)
                         .environment(\.codeEditorLayoutConfiguration, CodeEditor.LayoutConfiguration(showMinimap: false, wrapText: true))
@@ -249,6 +256,9 @@ class MobileGestaltManager: ObservableObject {
     func fetchPlist(_ location: URL) throws {
         guard let dict = try? String(contentsOf: location, encoding: .utf8) else { throw MobileGestaltFetchingError.unableToLoad }
         plistContent = MobileGestaltFileWrapper(content: dict)
+        if UserDefaults.standard.string(forKey: "savedDisplayName") == nil, let data = dict.data(using: .utf8), let decoded = try? PropertyListDecoder().decode(MGModel.self, from: data), let name = decoded.cacheExtra.artworkTraits?.artworkDeviceProductDescription {
+            MobileGestaltServer.shared.displayName = name
+        }
     }
 }
 
