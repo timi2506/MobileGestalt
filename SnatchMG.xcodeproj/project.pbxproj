@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8D00B7A32ECCC23E003F9505 /* CodeEditorView in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7A22ECCC23E003F9505 /* CodeEditorView */; };
+		8D00B7A32ECCC23E003F9505 /* CodeEditorView in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7A22ECCC23E003F9505 /* CodeEditorView */; settings = {ATTRIBUTES = (Weak, ); }; };
 		8D00B7A52ECCC23E003F9505 /* LanguageSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7A42ECCC23E003F9505 /* LanguageSupport */; };
 		8D00B7AA2ECCD388003F9505 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7A92ECCD388003F9505 /* Vapor */; };
 		8D00B7AF2ECCF72F003F9505 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7AE2ECCF72F003F9505 /* DeviceKit */; };
@@ -452,7 +452,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 13;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.timi2506.MGManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -495,7 +495,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 13;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.timi2506.MGManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";

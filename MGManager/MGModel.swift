@@ -22,9 +22,13 @@ struct MGModel: Codable {
 
 struct CacheExtra: Codable {
     let artworkTraits: ArtworkTraits?
+    let buildVersion: String?
+    let productType: String?
     // TODO: ADD MORE
     enum CodingKeys: String, CodingKey {
         case artworkTraits = "oPeik/9e8lQWMszEjbPzng"
+        case buildVersion = "mZfUC7qo4pURNhyMHZ62RQ"
+        case productType = "h9jDsbgj7xIVeIQ8S3/X3Q"
     }
 }
 
