@@ -23,6 +23,7 @@ struct ContentView: View {
         }
     }
     @State var selectedSave: MGSave?
+    @State var fileMoverURL: URL?
     var body: some View {
         NavigationStack {
             List(selection: $selectedSave) {
@@ -50,9 +51,6 @@ struct ContentView: View {
                     }
                     .tag(save.wrappedValue)
                 }
-                .onDelete { offsets in
-                    mgSavesManager.saves.remove(atOffsets: offsets)
-                }
             }
             .listStyle(.inset(alternatesRowBackgrounds: true))
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.propertyList]) { result in
@@ -68,6 +66,13 @@ struct ContentView: View {
                     url.stopAccessingSecurityScopedResource()
                 }
             }
+            .fileMover(isPresented: Binding(get: {
+                fileMoverURL != nil
+            }, set: { new in
+                if !new { fileMoverURL = nil }
+            }), file: fileMoverURL, onCompletion: { result in
+                print("Moved successfully")
+            })
             .sheet(isPresented: $showImporter) {
                 NavigationStack {
                     VStack {
@@ -203,8 +208,24 @@ struct ContentView: View {
                             mgSavesManager.saves.removeAll(where: {
                                 $0.id == selectedSave.id
                             })
+                            self.selectedSave = nil
                         }
                         .keyboardShortcut(.delete, modifiers: .command)
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Export", systemImage: "square.and.arrow.up", role: .destructive) {
+                            do {
+                                let url = URL.temporaryDirectory.appendingPathComponent("com.apple.MobileGestalt.plist", conformingTo: .propertyList)
+                                if FileManager.default.fileExists(atPath: url.path()) {
+                                    try? FileManager.default.removeItem(at: url)
+                                }
+                                try selectedSave.content.data(using: .utf8)?.write(to: url)
+                                fileMoverURL = url
+                            } catch {
+                                print(error.localizedDescription)
+                            }
+                        }
+                        .keyboardShortcut(.defaultAction)
                     }
                 }
                 if #available(macOS 26, *) {
@@ -224,9 +245,38 @@ struct ContentView: View {
                 }
             }
         }
+        .onOpenURL { url in
+            if url.isFileURL, let content = try? String(contentsOf: url, encoding: .utf8) {
+                _ = url.startAccessingSecurityScopedResource()
+                let mgModel: MGModel? = {
+                    if let contentData = content.data(using: .utf8), let m = try? PropertyListDecoder().decode(MGModel.self, from: contentData) {
+                        return m
+                    }
+                    return nil
+                }()
+                importItem = ItemToImport(content: content, mgModel: mgModel)
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
     }
     @State var importDeviceName = ""
     @State var importDate = Date()
+}
+
+
+import UniformTypeIdentifiers
+
+struct MobileGestaltFileWrapper: Transferable, Equatable {
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .propertyList, exporting: { item in
+            let location = URL.temporaryDirectory.appendingPathComponent("com.apple.MobileGestalt.plist", conformingTo: .propertyList)
+            try? FileManager.default.removeItem(at: location)
+            try item.content.write(to: location, atomically: true, encoding: String.Encoding.utf8)
+            return SentTransferredFile(location)
+        })
+        .suggestedFileName("com.apple.MobileGestalt.plist")
+    }
+    var content: String
 }
 
 func deviceImage(for identifier: String?) -> NSImage? {
