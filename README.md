@@ -1,7 +1,7 @@
 # SnatchMG
 
 ## Credits
-https://github.com/p-x9/swift-mobile-gestalt for the ability to fetch MobileGestalt Values directly
+https://github.com/p-x9/swift-mobile-gestalt for the ability to fetch MobileGestalt Values directly (MGCopyAnswer)
 
 https://github.com/vapor/vapor for making the Server possible
 
