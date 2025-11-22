@@ -26,11 +26,50 @@ struct MGModel: Codable {
 
 struct CacheExtra: Codable {
     let artworkTraits: ArtworkTraits?
-    // TODO: ADD MORE
+    let buildVersion: String?
+    let productType: String?
+    
+    let additionalFields: [String: CodableValue]
+    
     enum CodingKeys: String, CodingKey {
         case artworkTraits = "oPeik/9e8lQWMszEjbPzng"
+        case buildVersion  = "mZfUC7qo4pURNhyMHZ62RQ"
+        case productType   = "h9jDsbgj7xIVeIQ8S3/X3Q"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        artworkTraits = try? container.decode(ArtworkTraits.self, forKey: .artworkTraits)
+        buildVersion  = try? container.decode(String.self, forKey: .buildVersion)
+        productType   = try? container.decode(String.self, forKey: .productType)
+        
+        // DECODE UNKNOWN KEYS
+        let raw = try decoder.container(keyedBy: DynamicCodingKeys.self)
+        
+        var extras: [String: CodableValue] = [:]
+        
+        for key in raw.allKeys {
+            if CodingKeys(stringValue: key.stringValue) != nil {
+                continue
+            }
+            
+            let value = try raw.decode(CodableValue.self, forKey: key)
+            extras[key.stringValue] = value
+        }
+        
+        self.additionalFields = extras
+    }
+    
+    struct DynamicCodingKeys: CodingKey {
+        var stringValue: String
+        init?(stringValue: String) { self.stringValue = stringValue }
+        
+        var intValue: Int? { nil }
+        init?(intValue: Int) { return nil }
     }
 }
+
 
 struct ArtworkTraits: Codable {
     let artworkDeviceIdiom: String

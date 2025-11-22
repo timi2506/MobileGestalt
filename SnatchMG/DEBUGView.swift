@@ -14,29 +14,42 @@ struct DEBUGView: View {
     var url: URL {
         URL(fileURLWithPath: filePath)
     }
+    @State var copyAnswerString = ""
     var body: some View {
         Form {
-            if let error {
-                Text(error.localizedDescription)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-            TextField("FilePath", text: $filePath)
-            Button("Fetch") {
-                if let s = try? String(contentsOf: url, encoding: .utf8) {
-                    content = s
+            Section("FetchAnyFile") {
+                if let error {
+                    Text(error.localizedDescription)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+                TextField("FilePath", text: $filePath)
+                Button("Fetch") {
+                    if let s = try? String(contentsOf: url, encoding: .utf8) {
+                        content = s
+                    }
+                }
+                ShareLink(item: MobileGestaltFileWrapper(content: content), preview: SharePreview(url.lastPathComponent)) {
+                    HStack {
+                        Spacer()
+                        Text("Share")
+                            .bold()
+                        Spacer()
+                    }
+                    .padding(10)
+                }
+                if !content.isEmpty {
+                    TextEditor(text: $content)
                 }
             }
-            ShareLink(item: MobileGestaltFileWrapper(content: content), preview: SharePreview(url.lastPathComponent)) {
-                HStack {
-                    Spacer()
-                    Text("Share")
-                        .bold()
-                    Spacer()
+            Section("SMGCopyAnswer") {
+                TextField("CopyAnswerString", text: $copyAnswerString)
+                Button("Perform Copy as String") {
+                    if let string = ValueForMGKeyAsString(copyAnswerString) {
+                        copyAnswerString = string
+                    }
                 }
-                .padding(10)
             }
-            TextEditor(text: $content)
         }
         .navigationTitle("Debug")
         .toolbarTitleDisplayMode(.inline)

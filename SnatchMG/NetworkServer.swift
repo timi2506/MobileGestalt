@@ -46,10 +46,23 @@ final class MobileGestaltServer: NSObject, ObservableObject, NetServiceDelegate 
             return DeviceInformation(name: self.displayName, description: self.additionalInformation)
         }
         
+        app.get("getMobileGestaltValue") { req throws -> String in
+            let key: String? = req.query["key"]
+            if let key {
+                if let result = ValueForMGKeyAsString(key) {
+                    return result
+                } else {
+                    throw Abort(.internalServerError, reason: "Unable to Load Value from MobileGestalt, please check if you have provided a valid Key. Current Key: \"\(key)\"")
+                }
+            } else {
+                throw Abort(.badRequest, reason: "\"key\" parameter missing. Usage: /getMobileGestaltValue?key=someMobileGestaltKey")
+            }
+        }
+        
         app.http.server.configuration.port = Int(port)
         app.http.server.configuration.hostname = "0.0.0.0"
 
-        // Why 7771? MG (standing for MobileGestalt) is 7771 in ASCII
+        // Why 7771? MG (standing for MobileGestalt) is 7771 in ASCII and it was free :D
         if let port32 = Int32(exactly: port) {
             advertiseBonjour(port: port32)
         } else {

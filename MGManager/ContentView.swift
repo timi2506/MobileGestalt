@@ -210,7 +210,7 @@ struct ContentView: View {
                             })
                             self.selectedSave = nil
                         }
-                        .keyboardShortcut(.delete, modifiers: .command)
+                        .keyboardShortcut(.delete)
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button("Export", systemImage: "square.and.arrow.up", role: .destructive) {

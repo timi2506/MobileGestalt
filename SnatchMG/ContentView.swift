@@ -18,6 +18,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme: ColorScheme
     @State var errorText: Text?
     @StateObject var server = MobileGestaltServer.shared
+    @AppStorage("autoStart") var autoStart = false
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -36,9 +37,9 @@ struct ContentView: View {
                                         Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
                                     }
                                 }
-                                    .disabled(server.isAdvertising)
-                                    .autocorrectionDisabled()
-                                    .textInputAutocapitalization(.never)
+                                .disabled(server.isAdvertising)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
                             } header: {
                                 Text("Device Name")
                             } footer: {
@@ -76,6 +77,12 @@ struct ContentView: View {
                             } header: {
                                 Text("Additional Information")
                             }
+                            VStack(alignment: .leading) {
+                                Toggle("Autostart", isOn: $autoStart)
+                                Text("Whether to auto-start the Server on App launch")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         .formStyle(.grouped)
                         .navigationTitle("Server Configuration")
@@ -112,7 +119,7 @@ struct ContentView: View {
                         }
                     }) {
                         serverBar(false)
-                        .navigationLinkIndicatorVisibility(.hidden)
+                            .navigationLinkIndicatorVisibility(.hidden)
                     }
                     .buttonStyle(.plain)
                     Button(action: {
@@ -136,16 +143,51 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
                 .padding()
+#if DEBUG
                 NavigationLink("DEBUG") {
                     DEBUGView()
                 }
+#endif
                 if let content = mobileGestaltManager.plistContent {
-                    if let model = try? MGModel(from: .shared) {
-                        Text(String(describing: model))
+                    TabView {
+                        if let model = try? MGModel(from: .shared) {
+                            Form {
+                                Section("CacheData") {
+                                    ValueView(model.cacheData)
+                                }
+                                Section("CacheExtra") {
+                                    HStack {
+                                        Text("BuildVersion")
+                                        Spacer()
+                                        Text(model.cacheExtra.buildVersion ?? "Unknown")
+                                            .textSelection(.enabled)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    HStack {
+                                        Text("ProductType")
+                                        Spacer()
+                                        Text(model.cacheExtra.productType ?? "Unknown")
+                                            .textSelection(.enabled)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    if let artworkTraits = model.cacheExtra.artworkTraits {
+                                        ValueView(artworkTraits, customTitle: "ArtworkTraits")
+                                    }
+                                    ValueView(model.cacheExtra.additionalFields, customTitle: "Additional Fields (\(model.cacheExtra.additionalFields.count.formatted(.number)))")
+                                }
+                                Section("CacheUUID") {
+                                    ValueView(value: .string(model.cacheUUID))
+                                }
+                                Section("CacheVersion") {
+                                    ValueView(value: .string(model.cacheVersion))
+                                }
+                            }
+                        }
+                        CodeEditor(text: .constant(content.content), position: $position, messages: $messages, language: .swift())
+                            .environment(\.codeEditorTheme, colorScheme == .dark ? Theme.defaultDark : Theme.defaultLight)
+                            .environment(\.codeEditorLayoutConfiguration, CodeEditor.LayoutConfiguration(showMinimap: false, wrapText: true))
                     }
-                    CodeEditor(text: .constant(content.content), position: $position, messages: $messages, language: .swift())
-                        .environment(\.codeEditorTheme, colorScheme == .dark ? Theme.defaultDark : Theme.defaultLight)
-                        .environment(\.codeEditorLayoutConfiguration, CodeEditor.LayoutConfiguration(showMinimap: false, wrapText: true))
+                    .tabViewStyle(.page)
                 } else {
                     ContentUnavailableView(errorText == nil ? "Not Loaded" : "An Error occured", systemImage: "xmark", description: errorText?.foregroundStyle(.red))
                         .onAppear {
@@ -181,8 +223,26 @@ struct ContentView: View {
             }
             .clipShape(.rect(cornerRadius: 25))
             .padding(5)
+            .toolbar {
+                ToolbarItem(placement: .keyboard) {
+                    Button("Dismiss Keyboard", systemImage: "keyboard.chevron.compact.down") {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                }
+            }
         }
         .animation(.default, value: mobileGestaltManager.plistContent)
+        .onAppear {
+            if autoStart {
+                Task {
+                    do {
+                        try await server.start()
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        }
     }
     func serverBar(_ isInExpanded: Bool) -> some View {
         HStack {
@@ -211,6 +271,18 @@ struct ContentView: View {
             messages.insert(TextLocated(location: .init(oneBasedLine: 0, column: 0), entity: msg))
             errorText = Text(error.localizedDescription)
         }
+    }
+    func prettyHexDump(_ data: Data) -> String {
+        var output = ""
+        let bytes = [UInt8](data)
+        
+        for i in stride(from: 0, to: bytes.count, by: 16) {
+            let chunk = bytes[i..<min(i+16, bytes.count)]
+            let hex = chunk.map { String(format: "%02X", $0) }.joined(separator: " ")
+            let ascii = chunk.map { $0 >= 32 && $0 < 127 ? String(UnicodeScalar($0)) : "." }.joined()
+            output += String(format: "%08X  %-48@  %@\n", i, hex, ascii)
+        }
+        return output
     }
 }
 

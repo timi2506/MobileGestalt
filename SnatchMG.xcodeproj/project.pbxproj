@@ -11,6 +11,7 @@
 		8D00B7A52ECCC23E003F9505 /* LanguageSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7A42ECCC23E003F9505 /* LanguageSupport */; };
 		8D00B7AA2ECCD388003F9505 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7A92ECCD388003F9505 /* Vapor */; };
 		8D00B7AF2ECCF72F003F9505 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 8D00B7AE2ECCF72F003F9505 /* DeviceKit */; };
+		8DE8945E2ED1C51B005BAC9D /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 8DE8945D2ED1C518005BAC9D /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,6 +30,7 @@
 /* Begin PBXFileReference section */
 		8D6A0EBD2EC9F49D00BFD53F /* SnatchMG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnatchMG.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8DC874502ED06ECA00ED2B44 /* MGManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MGManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8DE8945D2ED1C518005BAC9D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -92,6 +94,7 @@
 		8D6A0EB42EC9F49D00BFD53F = {
 			isa = PBXGroup;
 			children = (
+				8DE8945D2ED1C518005BAC9D /* README.md */,
 				8D6A0EBF2EC9F49D00BFD53F /* SnatchMG */,
 				8DC874512ED06ECA00ED2B44 /* MGManager */,
 				8D6A0EBE2EC9F49D00BFD53F /* Products */,
@@ -231,6 +234,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8DE8945E2ED1C51B005BAC9D /* README.md in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
