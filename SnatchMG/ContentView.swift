@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  MobileGestalt
+//  SnatchMG
 //
 //  Created by Tim on 16.11.25.
 //
@@ -143,11 +143,11 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
                 .padding()
-#if DEBUG
-                NavigationLink("DEBUG") {
-                    DEBUGView()
-                }
-#endif
+// #if DEBUG
+//                 NavigationLink("DEBUG") {
+//                     DEBUGView()
+//                 }
+// #endif
                 if let content = mobileGestaltManager.plistContent {
                     TabView {
                         if let model = try? MGModel(from: .shared) {

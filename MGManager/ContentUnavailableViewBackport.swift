@@ -1,6 +1,6 @@
 //
 //  ContentUnavailableViewBackport.swift
-//  SnatchMG
+//  MGManager
 //
 //  Created by Tim on 21.11.25.
 //

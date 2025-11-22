@@ -1,6 +1,6 @@
 //
 //  MGModel.swift
-//  SnatchMG
+//  MGManager
 //
 //  Created by Tim on 20.11.25.
 //

@@ -1,6 +1,6 @@
 //
 //  MobileGestaltApp.swift
-//  MobileGestalt
+//  SnatchMG
 //
 //  Created by Tim on 16.11.25.
 //

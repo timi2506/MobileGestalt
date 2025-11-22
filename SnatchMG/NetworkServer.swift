@@ -1,3 +1,10 @@
+//
+//  NetworkServer.swift
+//  SnatchMG
+//
+//  Created by Tim on 16.11.25.
+//
+
 import Vapor
 import Network
 import SwiftUI
