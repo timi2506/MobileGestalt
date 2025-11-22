@@ -20,7 +20,25 @@ struct ContentUnavailableViewBackport: View {
         if #available(macOS 17, *) {
             ContentUnavailableView(title, systemImage: systemImage, description: description)
         } else {
-            Text("Placeholder")
+            VStack {
+                Image(systemName: systemImage)
+                    .font(.system(size: 75))
+                    .foregroundStyle(.tertiary)
+                    .padding(5)
+                Text(title)
+                    .font(.system(size: 25))
+                    .bold()
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(5)
+                if let description {
+                    description
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(5)
+                }
+            }
+            .padding(.vertical, 25)
         }
     }
 }
