@@ -29,7 +29,7 @@ struct DEBUGView: View {
                         content = s
                     }
                 }
-                ShareLink(item: MobileGestaltFileWrapper(content: content), preview: SharePreview(url.lastPathComponent)) {
+                ShareLink(item: MobileGestaltFileWrapper(content: Data(content.utf8)), preview: SharePreview(url.lastPathComponent)) {
                     HStack {
                         Spacer()
                         Text("Share")

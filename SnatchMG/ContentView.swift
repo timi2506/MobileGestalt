@@ -188,7 +188,7 @@ struct ContentView: View {
                                 }
                             }
                         }
-                        CodeEditor(text: .constant(content.content), position: $position, messages: $messages, language: .swift())
+                        CodeEditor(text: .constant(content.stringRepresentation), position: $position, messages: $messages, language: .swift())
                             .environment(\.codeEditorTheme, colorScheme == .dark ? Theme.defaultDark : Theme.defaultLight)
                             .environment(\.codeEditorLayoutConfiguration, CodeEditor.LayoutConfiguration(showMinimap: false, wrapText: true))
                     }
@@ -332,9 +332,9 @@ class MobileGestaltManager: ObservableObject {
     }
     func fetchPlist(_ location: URL) throws {
         do {
-            let dict = try String(contentsOf: location, encoding: .utf8)
-            plistContent = MobileGestaltFileWrapper(content: dict)
-            if UserDefaults.standard.string(forKey: "savedDisplayName") == nil, let data = dict.data(using: .utf8), let decoded = try? PropertyListDecoder().decode(MGModel.self, from: data), let name = decoded.cacheExtra.artworkTraits?.artworkDeviceProductDescription {
+            let data = try Data(contentsOf: location)
+            plistContent = MobileGestaltFileWrapper(content: data)
+            if UserDefaults.standard.string(forKey: "savedDisplayName") == nil, let decoded = try? PropertyListDecoder().decode(MGModel.self, from: data), let name = decoded.cacheExtra.artworkTraits?.artworkDeviceProductDescription {
                 MobileGestaltServer.shared.displayName = name
             }
         } catch {
@@ -342,6 +342,7 @@ class MobileGestaltManager: ObservableObject {
         }
     }
 }
+
 
 enum MobileGestaltFetchingError: LocalizedError {
     case unableToLoad(_ additionalInfo: String)
@@ -401,10 +402,24 @@ struct MobileGestaltFileWrapper: Transferable, Equatable {
         FileRepresentation(exportedContentType: .propertyList, exporting: { item in
             let location = URL.temporaryDirectory.appendingPathComponent("com.apple.MobileGestalt.plist", conformingTo: .propertyList)
             try? FileManager.default.removeItem(at: location)
-            try item.content.write(to: location, atomically: true, encoding: String.Encoding.utf8)
+            try item.content.write(to: location, options: .atomic)
             return SentTransferredFile(location)
         })
         .suggestedFileName("com.apple.MobileGestalt.plist")
     }
-    var content: String
+    var content: Data
+    var stringRepresentation: String {
+        if let string = String(data: self.content, encoding: .utf8) {
+            return string
+        } else {
+            do {
+                let plistObject = try PropertyListSerialization.propertyList(from: self.content, options: [], format: nil)
+                let xmlData = try PropertyListSerialization.data(fromPropertyList: plistObject, format: .xml, options: 0)
+                return String(data: xmlData, encoding: .utf8) ?? "Unable to show as Text"
+            } catch {
+                print("Failed to convert binary plist to XML string:", error)
+                return "Unable to show as Text"
+            }
+        }
+    }
 }

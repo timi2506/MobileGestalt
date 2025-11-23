@@ -10,7 +10,7 @@ import Foundation
 struct MGModel: Codable {
     init(from manager: MobileGestaltManager) throws {
         let decoder = PropertyListDecoder()
-        self = try decoder.decode(MGModel.self, from: manager.plistContent?.content.data(using: .utf8) ?? Data())
+        self = try decoder.decode(MGModel.self, from: manager.plistContent?.content ?? Data())
     }
     let cacheData: Data
     let cacheExtra: CacheExtra

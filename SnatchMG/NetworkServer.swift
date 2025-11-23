@@ -41,12 +41,14 @@ final class MobileGestaltServer: NSObject, ObservableObject, NetServiceDelegate 
             return DeviceInformation(name: self.displayName, description: self.additionalInformation)
         }
         
-        app.get("getMobileGestalt") { req -> String in
+        app.get("getMobileGestalt") { req in
             try? MobileGestaltManager.shared.fetchMobilegestalt()
             guard let gestalt = MobileGestaltManager.shared.plistContent?.content else {
                 throw URLError(.fileDoesNotExist)
             }
-            return gestalt
+            var headers = HTTPHeaders()
+            headers.add(name: .contentType, value: "application/x-plist")
+            return Response(status: .ok, headers: headers, body: .init(data: gestalt))
         }
         
         app.get("deviceInfo") { req -> DeviceInformation in

@@ -54,10 +54,11 @@ struct ContentView: View {
             }
             .listStyle(.inset(alternatesRowBackgrounds: true))
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.propertyList]) { result in
-                if let url = try? result.get(), let content = try? String(contentsOf: url, encoding: .utf8) {
+                if let url = try? result.get(), let content = try? Data(contentsOf: url) {
                     _ = url.startAccessingSecurityScopedResource()
+        
                     let mgModel: MGModel? = {
-                        if let contentData = content.data(using: .utf8), let m = try? PropertyListDecoder().decode(MGModel.self, from: contentData) {
+                        if let m = try? PropertyListDecoder().decode(MGModel.self, from: content) {
                             return m
                         }
                         return nil
@@ -74,78 +75,7 @@ struct ContentView: View {
                 print("Moved successfully")
             })
             .sheet(isPresented: $showImporter) {
-                NavigationStack {
-                    VStack {
-                        Text("Available Devices")
-                            .bold()
-                            .padding()
-                        List(selection: $selectedBonjourItems) {
-                            if scanner.items.isEmpty {
-                                HStack {
-                                    Spacer()
-                                    ContentUnavailableViewBackport("No Devices found", systemImage: "xmark", description: Text("Please make sure you have enabled the Server in SnatchMG and your Devices are connected to the same WiFi Network. Alternatively you can Select an Existing File using the Select File Button."))
-                                    Spacer()
-                                }
-                            }
-                            ForEach(scanner.items) { item in
-                                HStack {
-                                    Image(nsImage: deviceImage(for: item.deviceInformation?.deviceIdentifier) ?? NSImage(named: NSImage.networkName) ?? NSImage())
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(height: 35)
-                                    VStack(alignment: .leading) {
-                                        Text(item.name)
-                                            .bold()
-                                        Text(item.serverURL.absoluteString)
-                                        if let deviceInfo = item.deviceInformation {
-                                            Text(deviceInfo.description ?? "iOS \(deviceInfo.osVersion)")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-                                }
-                                .contentShape(.rect)
-                                .tag(item)
-                            }
-                        }
-                        .scrollIndicators(.never)
-                        .animation(.default, value: scanner.items)
-                        .frame(minHeight: 225)
-                    }
-                    .listStyle(.inset(alternatesRowBackgrounds: true))
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") {
-                                showImporter = false
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Import") {
-                                Task {
-                                    let items = selectedBonjourItemsFilter
-                                    for item in items {
-                                        let mgSave = try await MGSave(from: item)
-                                        mgSavesManager.saves.append(mgSave)
-                                    }
-                                    showImporter = false
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(selectedBonjourItemsFilter.isEmpty)
-                        }
-                        ToolbarItem(placement: .automatic) {
-                            Button("Select File") {
-                                showImporter = false
-                                showFileImporter = true
-                            }
-                        }
-                    }
-                    .onChange(of: scanner.items) { _ in
-                        selectedBonjourItems = selectedBonjourItemsFilter
-                    }
-                }
+                importerSheet
             }
             .sheet(item: $importItem) { item in
                 NavigationStack {
@@ -219,7 +149,7 @@ struct ContentView: View {
                                 if FileManager.default.fileExists(atPath: url.path()) {
                                     try? FileManager.default.removeItem(at: url)
                                 }
-                                try selectedSave.content.data(using: .utf8)?.write(to: url)
+                                try selectedSave.content.write(to: url)
                                 fileMoverURL = url
                             } catch {
                                 print(error.localizedDescription)
@@ -246,10 +176,10 @@ struct ContentView: View {
             }
         }
         .onOpenURL { url in
-            if url.isFileURL, let content = try? String(contentsOf: url, encoding: .utf8) {
+            if url.isFileURL, let content = try? Data(contentsOf: url) {
                 _ = url.startAccessingSecurityScopedResource()
                 let mgModel: MGModel? = {
-                    if let contentData = content.data(using: .utf8), let m = try? PropertyListDecoder().decode(MGModel.self, from: contentData) {
+                    if let m = try? PropertyListDecoder().decode(MGModel.self, from: content) {
                         return m
                     }
                     return nil
@@ -261,6 +191,80 @@ struct ContentView: View {
     }
     @State var importDeviceName = ""
     @State var importDate = Date()
+    var importerSheet: some View {
+        NavigationStack {
+            VStack {
+                Text("Available Devices")
+                    .bold()
+                    .padding()
+                List(selection: $selectedBonjourItems) {
+                    if scanner.items.isEmpty {
+                        HStack {
+                            Spacer()
+                            ContentUnavailableViewBackport("No Devices found", systemImage: "xmark", description: Text("Please make sure you have enabled the Server in SnatchMG and your Devices are connected to the same WiFi Network. Alternatively you can Select an Existing File using the Select File Button."))
+                            Spacer()
+                        }
+                    }
+                    ForEach(scanner.items) { item in
+                        HStack {
+                            Image(nsImage: deviceImage(for: item.deviceInformation?.deviceIdentifier) ?? NSImage(named: NSImage.networkName) ?? NSImage())
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 35)
+                            VStack(alignment: .leading) {
+                                Text(item.name)
+                                    .bold()
+                                Text(item.serverURL.absoluteString)
+                                if let deviceInfo = item.deviceInformation {
+                                    Text(deviceInfo.description ?? "iOS \(deviceInfo.osVersion)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                        }
+                        .contentShape(.rect)
+                        .tag(item)
+                    }
+                }
+                .scrollIndicators(.never)
+                .animation(.default, value: scanner.items)
+                .frame(minHeight: 225)
+            }
+            .listStyle(.inset(alternatesRowBackgrounds: true))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        showImporter = false
+                    }
+                    .buttonStyle(.bordered)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Import") {
+                        Task {
+                            let items = selectedBonjourItemsFilter
+                            for item in items {
+                                let mgSave = try await MGSave(from: item)
+                                mgSavesManager.saves.append(mgSave)
+                            }
+                            showImporter = false
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(selectedBonjourItemsFilter.isEmpty)
+                }
+                ToolbarItem(placement: .automatic) {
+                    Button("Select File") {
+                        showImporter = false
+                        showFileImporter = true
+                    }
+                }
+            }
+            .onChange(of: scanner.items) { _ in
+                selectedBonjourItems = selectedBonjourItemsFilter
+            }
+        }
+    }
 }
 
 
@@ -271,12 +275,26 @@ struct MobileGestaltFileWrapper: Transferable, Equatable {
         FileRepresentation(exportedContentType: .propertyList, exporting: { item in
             let location = URL.temporaryDirectory.appendingPathComponent("com.apple.MobileGestalt.plist", conformingTo: .propertyList)
             try? FileManager.default.removeItem(at: location)
-            try item.content.write(to: location, atomically: true, encoding: String.Encoding.utf8)
+            try item.content.write(to: location, options: .atomic)
             return SentTransferredFile(location)
         })
         .suggestedFileName("com.apple.MobileGestalt.plist")
     }
-    var content: String
+    var content: Data
+    var stringRepresentation: String {
+        if let string = String(data: self.content, encoding: .utf8) {
+            return string
+        } else {
+            do {
+                let plistObject = try PropertyListSerialization.propertyList(from: self.content, options: [], format: nil)
+                let xmlData = try PropertyListSerialization.data(fromPropertyList: plistObject, format: .xml, options: 0)
+                return String(data: xmlData, encoding: .utf8) ?? "Unable to show as Text"
+            } catch {
+                print("Failed to convert binary plist to XML string:", error)
+                return "Unable to show as Text"
+            }
+        }
+    }
 }
 
 func deviceImage(for identifier: String?) -> NSImage? {
@@ -292,7 +310,7 @@ func deviceImage(for identifier: String?) -> NSImage? {
 
 struct ItemToImport: Identifiable {
     var id = UUID()
-    var content: String
+    var content: Data
     var isMobileGestaltForSure: Bool {
         mgModel != nil
     }
@@ -331,30 +349,42 @@ struct MGSave: Codable, Identifiable, Hashable {
     init(from bonjourItem: BonjourItem) async throws {
         let decoder = JSONDecoder()
         let (mobileGestaltData, mobileGestaltRequestStatus) = try await URLSession.shared.data(for: URLRequest(url: bonjourItem.serverURL.appending(path: "getMobileGestalt")))
-        if let mgString = String(data: mobileGestaltData, encoding: .utf8) {
-            if (mobileGestaltRequestStatus as? HTTPURLResponse)?.statusCode == 500 {
-                throw URLError(.fileDoesNotExist)
-            }
-            self.content = mgString
-        } else {
+        if (mobileGestaltRequestStatus as? HTTPURLResponse)?.statusCode == 500 {
             throw URLError(.fileDoesNotExist)
         }
+        self.content = mobileGestaltData
         self.deviceName = bonjourItem.name
         self.date = Date()
         if let (deviceInfoData, _) = try? await URLSession.shared.data(from: bonjourItem.serverURL.appending(path: "deviceInfo")), let deviceInfo = try? decoder.decode(DeviceInformation.self, from: deviceInfoData) {
             self.deviceInformation = deviceInfo
         }
     }
-    init(deviceName: String, content: String, date: Date) {
+    init(deviceName: String, content: Data, date: Date) {
         self.deviceName = deviceName
         self.content = content
         self.date = date
     }
     var id = UUID()
     var deviceName: String
-    var content: String
+    var content: Data
     var date: Date
     var deviceInformation: DeviceInformation?
+    
+    var stringRepresentation: String {
+        if let string = String(data: self.content, encoding: .utf8) {
+            return string
+        } else {
+            do {
+                let plistObject = try PropertyListSerialization.propertyList(from: self.content, options: [], format: nil)
+                let xmlData = try PropertyListSerialization.data(fromPropertyList: plistObject, format: .xml, options: 0)
+                return String(data: xmlData, encoding: .utf8) ?? "Unable to show as Text"
+            } catch {
+                print("Failed to convert binary plist to XML string:", error)
+                return "Unable to show as Text"
+            }
+        }
+    }
+    
 }
 
 #Preview {
