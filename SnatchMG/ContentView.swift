@@ -345,19 +345,37 @@ class MobileGestaltManager: ObservableObject {
 
 enum MobileGestaltFetchingError: LocalizedError {
     case unableToLoad(_ additionalInfo: String)
-    var localizedDescription: String {
+    
+    var errorDescription: String? {
         switch self {
             case .unableToLoad(let moreInfo):
-                "An Error occured loading the MobileGestalt File to a Dictionary\n\n\(moreInfo)"
+                return "An error occurred loading the MobileGestalt file to a Dictionary\n\n\(moreInfo)"
         }
     }
-    var failureReason: String {
+    
+    var failureReason: String? {
         switch self {
             case .unableToLoad:
-                "MobileGestalt was unable to be loaded"
+                return "MobileGestalt was unable to be loaded"
+        }
+    }
+    
+    var helpAnchor: String? {
+        switch self {
+            case .unableToLoad:
+                return "Unknown"
+        }
+    }
+    
+    var recoverySuggestion: String? {
+        switch self {
+            case .unableToLoad:
+                return "Unknown"
         }
     }
 }
+
+
 
 #Preview {
     ContentView()

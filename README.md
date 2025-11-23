@@ -9,3 +9,5 @@ https://github.com/vapor/vapor for making the Server possible
 https://github.com/devicekit/DeviceKit.git for some of the Device Information fetching
 
 https://github.com/mchakravarty/CodeEditorView for the CodeEditorView
+
+https://github.com/Stossy11 for helping fix the Errors when using certain Certs
