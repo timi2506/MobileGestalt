@@ -331,20 +331,30 @@ class MobileGestaltManager: ObservableObject {
         try fetchPlist(plistLocation)
     }
     func fetchPlist(_ location: URL) throws {
-        guard let dict = try? String(contentsOf: location, encoding: .utf8) else { throw MobileGestaltFetchingError.unableToLoad }
-        plistContent = MobileGestaltFileWrapper(content: dict)
-        if UserDefaults.standard.string(forKey: "savedDisplayName") == nil, let data = dict.data(using: .utf8), let decoded = try? PropertyListDecoder().decode(MGModel.self, from: data), let name = decoded.cacheExtra.artworkTraits?.artworkDeviceProductDescription {
-            MobileGestaltServer.shared.displayName = name
+        do {
+            let dict = try String(contentsOf: location, encoding: .utf8)
+            plistContent = MobileGestaltFileWrapper(content: dict)
+            if UserDefaults.standard.string(forKey: "savedDisplayName") == nil, let data = dict.data(using: .utf8), let decoded = try? PropertyListDecoder().decode(MGModel.self, from: data), let name = decoded.cacheExtra.artworkTraits?.artworkDeviceProductDescription {
+                MobileGestaltServer.shared.displayName = name
+            }
+        } catch {
+            throw MobileGestaltFetchingError.unableToLoad(error.localizedDescription)
         }
     }
 }
 
 enum MobileGestaltFetchingError: LocalizedError {
-    case unableToLoad
-    var localizedDescription: LocalizedStringKey {
+    case unableToLoad(_ additionalInfo: String)
+    var localizedDescription: String {
+        switch self {
+            case .unableToLoad(let moreInfo):
+                "An Error occured loading the MobileGestalt File to a Dictionary\n\n\(moreInfo)"
+        }
+    }
+    var failureReason: String {
         switch self {
             case .unableToLoad:
-                "An Error occured loading the MobileGestalt File to a Dictionary"
+                "MobileGestalt was unable to be loaded"
         }
     }
 }
